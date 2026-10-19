@@ -12,9 +12,11 @@ Core 负责显式注册的业务行为，不拥有应用状态，也不会拦截
 
 ## 执行
 
-每次 Dispatch 查找 Handler，创建独立的冻结上下文，然后等待 Handler 的同步或异步返回。未知 ID 返回拒绝的 Promise。Handler 抛出的原始值直接传播，包括嵌套错误；父 Action 也可自行捕获并恢复。
+每次 Dispatch 分配执行标识，创建独立的冻结上下文，记录开始事件并检查取消，再通过 Middleware 执行 Handler，等待同步或异步返回后记录终态。未知 ID 返回拒绝的 Promise，也可形成错误执行记录。Handler 抛出的原始值直接传播，包括嵌套错误；父 Action 和 Middleware 可自行捕获并恢复。
 
-上下文只含 `providers` 和 `dispatch`。Milestone 2 将补充 Execution/Trace ID、生命周期与父子关联；当前没有隐式的全局当前执行对象。
+上下文包含 Providers、Dispatch、Action/Execution/Trace ID、父 ID 和 AbortSignal。子 Dispatch 通过闭包保存父上下文，不使用隐式全局当前执行对象。根调用的信号彼此独立；子调用继承父信号，或与显式子信号组合。
+
+Trace 组件提供有容量上限的内存存储、冻结快照、查询与订阅；默认只采集结构和时间，观察者或脱敏回调失败不传播到业务执行。生产默认关闭追踪，Development/Test 默认开启，可显式覆盖。容量回收和 clear 不取消业务，也不会在任务结束时恢复已删除记录。详见 [执行与追踪边界](execution-trace.md)。
 
 ## 依赖边界
 

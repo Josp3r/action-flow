@@ -2,13 +2,13 @@
 
 ## 当前结论（2026-10-19）
 
-**Milestone 1：Core Runtime 已完成。整体 MVP 尚未完成，下一阶段为 Execution & Trace。** 本次按启动文档的严格验收，补齐了显式 Contract 模式下的跨模块类型安全，以及契约与实际注册实现的一致性检查。
+**Milestone 1：Core Runtime 和 Milestone 2：Execution & Trace 已完成。整体 MVP 尚未完成，下一阶段为 Scenario。** Core 已提交并推送至 main（`b85fa13`）；本轮继续实现了执行追踪、Middleware 与协作取消。
 
 按 [项目成功标准](project-background.md#15-项目成功标准) 对照：
 
 - **统一管理业务行为：已验证。** Registry 可列出、查询 Action，并拒绝重复 ID。
 - **独立执行业务行为：已验证。** Dispatch 和 Providers 可脱离页面运行，显式 Contract 支持完整类型安全的嵌套调用，结果及原始异常正确传播。
-- **稳定复现业务分支并观察完整 Trace：未完成。** 尚未实现执行记录、Scenario、执行级依赖覆盖与 Mock。现有成功/失败 Demo 不能替代这项验收。
+- **稳定复现业务分支并观察完整 Trace：部分完成。** 可以观察嵌套、并发调用的执行记录，但 Scenario、执行级依赖覆盖与 Mock 尚未实现。现有成功/失败 Demo 不能替代场景复现验收。
 
 ## 阶段 1：Core Runtime（已完成）
 
@@ -24,19 +24,20 @@
 
 验收证据：正反类型用例、25 项运行时测试、可运行的登录/会话嵌套示例、实际安装包的外部消费项目。详见 [API](api-design.md) 和 [类型设计](RFC.md)。
 
-## 阶段 2：Execution & Trace（下一步）
+## 阶段 2：Execution & Trace（已完成）
 
-推进顺序：
+已实施：
 
-1. 定义执行记录、生命周期、Trace 查询/订阅及容量配置接口；默认不记录业务输入、输出和错误详情。
-2. 为每次 Dispatch 生成执行标识，使用调用上下文传播父子关系和 Trace ID。
-3. 实现有容量上限的内存记录、可配置采集及脱敏，隔离观察者错误。
-4. 接入 Middleware 和 AbortSignal，定义并测试短路、错误恢复、重复 next 与协作取消。
-5. 提供包含并发分支的可运行示例，证明调用关系不会串线。
+1. 每次 Dispatch 的 Execution ID、根 Trace ID、闭包传播的父子关系，覆盖未知 ID 和预取消调用。
+2. running/success/error/cancelled 生命周期、时间与耗时、冻结记录和 start/finish 事件。
+3. 有容量上限的内存记录、查询/订阅、观察者异常隔离、可配置详情采集及脱敏；回收或清空的记录不会在结束后恢复。
+4. 洋葱 Middleware、短路、错误恢复、重复/迟到 next 的协议检查，以及 AbortSignal 的继承、组合和清理。
+5. 显式环境配置：默认 production 关闭追踪，development/test 开启结构追踪；正常 Dispatch 始终可用。
+6. `pnpm example:trace`：两条并发成功树、父子错误树、执行中取消树，11 次开始和 11 次结束事件。
 
-完成标准：可还原嵌套、并发执行的真实调用关系，准确记录状态与耗时；关闭追踪时仍可正常执行 Action。当前没有这部分实现，不将普通的并发调用测试计作 Trace 验收。
+验收：59 项测试覆盖原有 Core 与上述执行边界，正反类型检查、真实浏览器 11 项检查、实际 tarball 的嵌套追踪/取消和导出类型检查通过。Node 22、24 均已验证。详细边界见 [Execution & Trace](execution-trace.md)。容量不足时树可能不完整；取消为协作机制，不承诺强制终止或回滚副作用。
 
-## 阶段 3：Scenario（待实施）
+## 阶段 3：Scenario（下一步）
 
 在执行上下文和 Trace 稳定后实施：
 
@@ -66,16 +67,17 @@
 - ESM 构建、Export Map、类型声明、零运行时依赖检查。
 - Node.js 22.23.1、24.18.0 的本地测试及实际 tarball 外部消费项目检查。
 - 不依赖浏览器全局对象的包导入与模拟独立 SSR 请求测试；尚未声称已验证具体 SSR 框架。
-- 浏览器直接导入 ESM 的验收页，先前版本的 7 项运行检查已通过。Contract 是编译期能力，由类型用例与打包消费项目验证。
-- 可重复的微基准 `pnpm bench`，不据此推断真实应用性能。
+- 浏览器直接导入 ESM 的验收页，11 项 Core/Trace/Middleware/取消检查已通过。Contract 是编译期能力，由类型用例与打包消费项目验证。
+- 可重复的微基准 `pnpm bench`，覆盖普通函数、关闭追踪的 Dispatch、开启结构追踪的 Dispatch，并检查保留数量。不据此推断真实应用性能。
 - CI 矩阵、手动打包与上传构建产物工作流，以及 `pnpm release:pack`。尚未运行远端工作流或发布 npm。
 
 剩余：随 Trace、Scenario 和 DevTools 增加对应的兼容性、性能与打包测试；完成真实调试 UI 的浏览器交互验收，确认版本策略、发布目标和发布流程。当前包仍为 0.0.0。
 
 ## 本轮检查
 
-- `pnpm check`：构建、类型检查、25 项运行时测试。
+- `pnpm check`：构建、类型检查、59 项运行时测试。
 - `pnpm example`：类型安全的跨模块返回值使用、登录成功与嵌套错误传播。
-- `pnpm check:package`：安装实际打包产物后，验证 ESM 执行、公开契约类型、错误 ID/输入/漏注册的负向用例，以及 README/许可证和零运行时依赖。
+- `pnpm example:trace`：并发、错误与取消调用树以及生命周期事件。
+- `pnpm check:package`：安装实际打包产物后，验证 ESM、父子追踪、取消、公开契约和执行类型、错误 ID/输入/漏注册/信号类型的负向用例，以及 README/许可证和零运行时依赖。
 
-以上检查只证明已实施的 Core，不将未来里程碑计入完成状态。
+以上检查只证明已实施的 Core 与 Execution & Trace，不将 Scenario 或 DevTools 计入完成状态。

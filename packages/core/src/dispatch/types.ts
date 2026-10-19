@@ -1,5 +1,6 @@
 import type { ActionInput, ActionOutput, ActionProviders, AnyAction } from "../action/types.js";
 import type { AnyModule } from "../module/define-module.js";
+import type { DispatchOptions } from "./options.js";
 
 type UnionToIntersection<Union> =
   (Union extends unknown ? (value: Union) => void : never) extends (value: infer Intersection) => void
@@ -31,8 +32,9 @@ export type RequiredProviders<Modules extends readonly AnyModule[]> =
       : never;
 
 type InputArgs<Action extends AnyAction> =
-  [ActionInput<Action>] extends [never] ? [input: never]
-    : [ActionInput<Action>] extends [void] ? [input?: ActionInput<Action>] : [input: ActionInput<Action>];
+  [ActionInput<Action>] extends [never] ? [input: never, options?: DispatchOptions]
+    : [ActionInput<Action>] extends [void] ? [input?: ActionInput<Action>, options?: DispatchOptions]
+      : [input: ActionInput<Action>, options?: DispatchOptions];
 
 // Distribute over IDs so a union ID cannot be paired with the wrong payload.
 type DispatchArgs<Actions, Id extends keyof Actions & string> = Id extends unknown

@@ -1,6 +1,6 @@
 # RFC 001：显式 Contract 与跨模块 Dispatch
 
-状态：显式 Contract 已实施，Milestone 1 的嵌套类型安全验收已完成。Trace、Scenario 和 DevTools 继续按下述计划推进。
+状态：显式 Contract 和 Execution & Trace 已实施，Milestone 1、2 验收已完成。Scenario 和 DevTools 继续按下述计划推进。
 
 ## 设计决策
 
@@ -58,9 +58,9 @@ Contract 可以描述全部应用能力，也可以只描述一组 Handler 所�
 - `playground/basic/index.ts`：登录并启动会话，父 Action 直接使用类型为 User 的子调用结果。
 - `scripts/check-package.mjs`：将实际 tarball 安装到临时外部项目，验证公开类型声明中的契约推导和负向用例。
 
-## 下一阶段：Execution & Trace
+## Execution & Trace（已实施）
 
-按前述提案推进，先明确接口和验收再实现：
+已按前述提案完成，具体公共接口及边界见 [Execution & Trace](execution-trace.md)：
 
 - 每次 Dispatch 生成 Execution ID；根调用生成 Trace ID，子调用通过闭包继承 Trace ID 和父 Execution ID，不使用全局可变的当前执行对象。
 - Trace 使用有容量上限的内存存储，支持查询和生命周期订阅。默认只采集结构与时间；输入、输出及错误详情按配置采集并支持脱敏。
@@ -68,7 +68,7 @@ Contract 可以描述全部应用能力，也可以只描述一组 Handler 所�
 - 默认并发执行，不增加排队、互斥或去重调度 API。
 - 使用 AbortSignal 协作取消并向子调用传播；取消不回滚已发生的业务副作用，也不能强制终止不处理信号的外部 Promise。
 
-验收覆盖嵌套调用、并发根调用与子调用的真实关系、状态迁移、异常、取消、订阅者抛错隔离、容量回收和 Trace 关闭时的正常执行。
+验收已覆盖嵌套调用、并发根调用与子调用的真实关系、状态迁移、异常、取消、订阅者抛错隔离、容量回收和 Trace 关闭时的正常执行。默认环境为 production，不自动读取宿主环境；development/test 默认开启结构追踪。详情采集需显式开启，Middleware 属于可改变执行结果的动态边界。
 
 ## 后续：Scenario
 

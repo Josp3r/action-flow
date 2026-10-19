@@ -1,11 +1,17 @@
 import type { actionContract, ContractDispatch } from "../contract/types.js";
+import type { DispatchOptions } from "../dispatch/options.js";
 
 /** The explicit dynamic boundary for actions without a declared contract. */
-export type ContextDispatch = (actionId: string, input?: unknown) => Promise<unknown>;
+export type ContextDispatch = (actionId: string, input?: unknown, options?: DispatchOptions) => Promise<unknown>;
 
 export interface ActionContext<Providers extends object = object, Contract = never> {
   readonly providers: Providers;
   readonly dispatch: [Contract] extends [never] ? ContextDispatch : ContractDispatch<Contract>;
+  readonly actionId: string;
+  readonly executionId: string;
+  readonly traceId: string;
+  readonly parentExecutionId?: string;
+  readonly signal: AbortSignal;
 }
 
 export interface ActionMetadata {

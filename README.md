@@ -2,7 +2,7 @@
 
 框架无关、以 Dispatch 为核心的 TypeScript Action Runtime。统一管理业务行为，通过注入外部依赖独立执行，并为后续 Trace 和 Scenario 调试提供基础。
 
-目前已完成 **Milestone 1：Core Runtime**：静态类型安全的 `runtime.dispatch`、Action/Module 定义、只读 Registry、Providers 注入，以及通过显式 Contract 实现类型安全的跨模块 `ctx.dispatch`。整体 MVP 仍在开发，Trace、Scenario 和 DevTools 尚未实现。包尚未发布。
+目前已完成 **Core Runtime 与 Execution & Trace**：静态类型安全的 Dispatch、模块与 Registry、Providers 注入、显式 Contract，以及支持并发调用关系的执行记录、内存追踪、Middleware 和 AbortSignal。整体 MVP 仍在开发，Scenario 和 DevTools 尚未实现。包尚未发布。
 
 ## 开发
 
@@ -12,6 +12,7 @@
 pnpm install
 pnpm check
 pnpm example
+pnpm example:trace
 ```
 
 `pnpm check` 先构建 Core，再执行类型检查和 Vitest 测试；示例的类型检查会使用实际构建出的声明文件。`pnpm example` 构建 Core 后运行 [基础示例](playground/basic/index.ts)，展示 Registry、类型推导、跨模块调用及异常传播。
@@ -71,6 +72,12 @@ runtime.registry.list();
 
 跨模块编排使用 `createActionFactory<Providers, AppContract>()`：Handler 内的 `ctx.dispatch` 根据同一 Contract 推导 ID、输入和结果；`createRuntime` 还会检查契约目标都已注册且实现兼容。完整示例见 [基础 Demo](playground/basic/index.ts)，其中会直接读取子调用返回的 User，无需类型断言。提前保存模块列表时使用 `as const` 保留静态注册信息。
 
+## 执行追踪
+
+创建 Runtime 时设置 `environment: "development"` 或显式 `trace: true`，然后通过 `runtime.trace.list()`、`getTrace(traceId)` 和 `subscribe(listener)` 检查调用关系与生命周期。默认环境为 production，追踪默认关闭；输入、输出和错误详情均需另外开启采集。
+
+运行 `pnpm example:trace` 可看到并发调用树、异常和取消状态。执行标识、Middleware、脱敏、容量回收及取消语义见 [执行与追踪说明](docs/execution-trace.md)。
+
 ## 当前边界
 
 - `runtime.dispatch` 根据静态注册模块校验 ID、Payload 和返回类型；不会自动验证来自网络或 JavaScript 调用方的数据。
@@ -78,7 +85,8 @@ runtime.registry.list();
 - Providers 复制并冻结顶层绑定，保留 API、Router、外部 Store 等依赖对象的身份；SDK 不管理应用状态，也不深度冻结业务对象。
 - Registry 为静态只读快照。重复 Action ID 在创建 Runtime 时抛错；未知 ID 在 Dispatch 时拒绝。
 - Core 没有运行时依赖，不访问浏览器或 Node.js 专有全局对象。当前构建为 ESM，尚未验证的兼容能力见 [路线图](docs/roadmap.md)。
-- Trace、Middleware、取消、Scenario、动态注册和 DevTools 尚未实现。
+- Trace 使用有容量上限的内存存储，不默认持久化；取消为协作机制，不会回滚业务副作用。
+- Scenario、动态注册和 DevTools 尚未实现。
 
 ## 文档
 
@@ -86,6 +94,7 @@ runtime.registry.list();
 - [类型设计提案与待确认决策](docs/RFC.md)
 - [核心结构与执行边界](docs/architecture.md)
 - [API 说明](docs/api-design.md)
+- [执行、追踪、Middleware 与取消](docs/execution-trace.md)
 - [里程碑与验收进度](docs/roadmap.md)
 
 ## License

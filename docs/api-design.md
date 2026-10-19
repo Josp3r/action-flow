@@ -1,4 +1,4 @@
-# Milestone 1 API
+# Core Runtime API
 
 以下 API 已实施。跨模块 Context 采用显式 Contract，设计依据见 [RFC](RFC.md)。
 
@@ -33,7 +33,7 @@ const auth = defineModule("app.auth", { login, ping });
 ## createRuntime / runtime.dispatch
 
 ```ts
-const runtime = createRuntime({ providers, modules: [auth, account] });
+const runtime = createRuntime({ providers, modules: [auth, account], environment: "development" });
 const result = await runtime.dispatch("app.auth.login", input);
 await runtime.dispatch("app.auth.ping");
 ```
@@ -44,7 +44,7 @@ Providers 必须满足所有 Action 声明的依赖。Dispatch 始终返回 Prom
 
 Contract 模式要求静态可确定的模块集合：直接传 `[auth, account]`，或保存为 `const modules = [auth, account] as const`。普通可变数组、存在联合可能性的模块或 Namespace、宽泛的字符串 Namespace/Action 索引签名和可选 Action 不能证明注册完整，因此会被拒绝。未使用 Contract 的 Runtime 保留原有数组接入方式。
 
-错误包括 `DuplicateActionError`（创建 Runtime 时）和 `UnknownActionError`（执行时），均包含 `actionId`。业务错误不包装。当前没有输入 Schema 校验、取消或执行记录。
+错误包括 `DuplicateActionError`（创建 Runtime 时）和 `UnknownActionError`（执行时），均包含 `actionId`。业务错误不包装。Dispatch 的可选第三个参数为 `{ signal?: AbortSignal }`，不会改变 ID 与输入的类型关联。Runtime 还支持 `environment`、`trace` 和 `middleware`；详见 [执行与追踪说明](execution-trace.md)。当前没有输入 Schema 校验。
 
 ## ctx.dispatch / ctx.providers
 
@@ -72,7 +72,7 @@ const runtime = createRuntime({ providers, modules: [auth, account] });
 
 `ActionSignature<Input, Output>` 描述输入和最终输出；异步 Handler 的返回 Promise 会被解析后比较。每份 Contract 可以描述全部应用能力，也可以只描述这组 Handler 所依赖的能力。多份 Contract 在同一个 Runtime 中会分别校验，同一 ID 的冲突要求不能被合并掩盖。
 
-`ctx.providers` 根据 Factory 的第一个泛型推导。`ctx.dispatch` 根据第二个泛型校验 ID 和输入，推导 Promise 的解析结果；它访问同一 Runtime 的 Action 和 Providers，每次嵌套调用有独立上下文。未传 Contract 时仍返回 `Promise<unknown>`。运行时继续拒绝未知 ID，不包装原始业务错误。
+`ctx.providers` 根据 Factory 的第一个泛型推导。`ctx.dispatch` 根据第二个泛型校验 ID 和输入，推导 Promise 的解析结果；它访问同一 Runtime 的 Action 和 Providers，每次嵌套调用有独立上下文，包含 `actionId`、`executionId`、`traceId`、可选的 `parentExecutionId` 与 `signal`。未传 Contract 时仍返回 `Promise<unknown>`。运行时继续拒绝未知 ID，不包装原始业务错误。
 
 Contract 不增加运行时注册表、字段或输入验证器。它不能验证从网络收到的数据，也不能修复 `any`、类型断言或显式擦除模块类型后的信息丢失。
 

@@ -17,7 +17,7 @@
 <body>
   <p>ActionFlow / Browser compatibility</p>
   <h1>在真实浏览器中验证 Core</h1>
-  <p>直接加载构建后的 ESM 产物，检查 Action 注册、依赖注入、嵌套调用和错误传播。</p>
+  <p>直接加载构建后的 ESM 产物，检查 Core、执行追踪、Middleware 和协作取消。</p>
   <button id="run" type="button">重新运行验收</button>
   <p id="summary" role="status" aria-live="polite">正在运行…</p>
   <ol id="results"></ol>
@@ -82,6 +82,52 @@
           let actual;
           try { createRuntime({ providers: {}, modules: [module, module] }); } catch (error) { actual = error; }
           assert(actual instanceof DuplicateActionError, "Duplicate Action was accepted");
+        });
+        await check("并发 Trace 的父子关系与生命周期", async () => {
+          const traced = createRuntime({ providers: { prefix: "trace" }, modules: [module], environment: "test" });
+          const events = [];
+          const unsubscribe = traced.trace.subscribe((event) => events.push(event.type));
+          await Promise.all([traced.dispatch("browser.parent", "one"), traced.dispatch("browser.parent", "two")]);
+          unsubscribe();
+          const records = traced.trace.list();
+          const roots = records.filter((record) => record.parentExecutionId === undefined);
+          assert(records.length === 4 && roots.length === 2, "Execution count mismatch");
+          assert(roots[0].traceId !== roots[1].traceId, "Concurrent traces were mixed");
+          for (const root of roots) {
+            const tree = traced.trace.getTrace(root.traceId);
+            assert(tree.length === 2 && tree[1].parentExecutionId === root.executionId, "Parent linkage mismatch");
+          }
+          assert(records.every((record) => record.status === "success"), "Invalid terminal state");
+          assert(events.filter((type) => type === "start").length === 4 && events.filter((type) => type === "finish").length === 4, "Lifecycle event mismatch");
+        });
+        await check("追踪脱敏与业务数据保持原样", async () => {
+          const traced = createRuntime({ providers: {}, trace: { capture: { input: true, output: true } }, modules: [defineModule("capture", {
+            echo: defineAction({ handler: (input) => input }),
+          })] });
+          const input = { name: "Ada", password: "secret" };
+          const output = await traced.dispatch("capture.echo", input);
+          const record = traced.trace.list()[0];
+          assert(output === input && input.password === "secret", "Business value was changed");
+          assert(record.input.password === "[REDACTED]" && record.output.password === "[REDACTED]", "Secrets were captured");
+        });
+        await check("Middleware 洋葱执行顺序", async () => {
+          const order = [];
+          const wrapped = createRuntime({ providers: { prefix: "wrapped" }, modules: [module], middleware: [
+            async (_, next) => { order.push("outer:before"); const value = await next(); order.push("outer:after"); return value; },
+            async (_, next) => { order.push("inner:before"); const value = await next(); order.push("inner:after"); return value; },
+          ] });
+          assert(await wrapped.dispatch("browser.echo", "value") === "wrapped:value", "Middleware changed the result");
+          assert(order.join(",") === "outer:before,inner:before,inner:after,outer:after", "Middleware order mismatch");
+        });
+        await check("AbortSignal 与 cancelled 执行状态", async () => {
+          const traced = createRuntime({ providers: { prefix: "cancel" }, modules: [module], trace: true });
+          const controller = new AbortController();
+          controller.abort("cancelled by browser check");
+          let actual;
+          try { await traced.dispatch("browser.echo", "value", { signal: controller.signal }); }
+          catch (error) { actual = error; }
+          assert(actual === controller.signal.reason, "Abort reason was changed");
+          assert(traced.trace.list()[0].status === "cancelled", "Cancellation state mismatch");
         });
       } catch (error) {
         failed++;

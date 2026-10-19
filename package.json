@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "example": "pnpm build && node --import tsx playground/basic/index.ts",
+    "example:trace": "pnpm build && node --import tsx playground/basic/trace.ts",
     "example:browser": "pnpm build && node scripts/serve-browser.mjs",
     "bench": "pnpm build && node scripts/benchmark.mjs",
     "check:package": "pnpm build && node scripts/check-package.mjs",
