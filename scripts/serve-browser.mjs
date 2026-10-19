@@ -13,7 +13,7 @@ const server = createServer(async (request, response) => {
     }
     const pathname = new URL(request.url, "http://localhost").pathname;
     const path = pathname === "/" ? "playground/browser/index.html" : pathname.slice(1);
-    if (!/^(?:playground\/browser\/|packages\/core\/dist\/)/u.test(path) || path.split("/").some((part) => part.startsWith(".")) || /[%\\]/u.test(path)) {
+    if (!/^(?:playground\/browser\/|packages\/(?:core|scenario)\/dist\/)/u.test(path) || path.split("/").some((part) => part.startsWith(".")) || /[%\\]/u.test(path)) {
       response.writeHead(404).end("Not found");
       return;
     }

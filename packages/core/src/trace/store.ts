@@ -47,7 +47,9 @@ export function createTraceStore(configuration: boolean | TraceOptions) {
   const list = (query: TraceQuery = {}): readonly ExecutionRecord[] => Object.freeze([...records.values()].filter((record) =>
     (query.traceId === undefined || record.traceId === query.traceId)
     && (query.actionId === undefined || record.actionId === query.actionId)
-    && (query.status === undefined || record.status === query.status)));
+    && (query.status === undefined || record.status === query.status)
+    && (query.scenarioId === undefined || record.scenarioId === query.scenarioId)
+    && (query.scenarioRunId === undefined || record.scenarioRunId === query.scenarioRunId)));
 
   const store: TraceStore = Object.freeze({
     enabled,

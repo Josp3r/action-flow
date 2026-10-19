@@ -1,5 +1,5 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": { "noEmit": true },
-  "include": ["packages/core/src/**/*.ts", "packages/core/test/**/*.ts", "playground/basic/**/*.ts"]
+  "include": ["packages/*/src/**/*.ts", "packages/*/test/**/*.ts", "playground/basic/**/*.ts"]
 }

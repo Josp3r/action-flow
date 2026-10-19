@@ -26,7 +26,7 @@ const tree = runtime.trace.getTrace(executions[0]!.traceId);
 
 每次 Dispatch，包括未知 ID 或执行前已取消的调用，均分配独立的 `executionId`。根调用生成 `traceId`；子调用沿 `ctx.dispatch` 继承 Trace ID，并使用当前执行 ID 作为 `parentExecutionId`。关联通过上下文闭包保存，不依赖全局可变的当前执行对象，因此并发根调用和并发子调用不会串线。
 
-Handler 上下文现在包含 `providers`、`dispatch`、`actionId`、`executionId`、`traceId`、可选 `parentExecutionId` 和 `signal`。关闭追踪时这些上下文字段仍然存在。
+Handler 上下文包含 `providers`、`dispatch`、`actionId`、`executionId`、`traceId`、可选 `parentExecutionId` 和 `signal`。Scenario 执行还含 `scenarioId`、`scenarioRunId`，并沿后代继承。关闭追踪时这些上下文字段仍然存在。
 
 执行状态从 `running` 进入 `success`、`error` 或 `cancelled`。每次执行分别产生 `start`、`finish` 事件。`startTime` 和 `endTime` 使用 Unix 毫秒；`duration` 使用单调时钟计算，缺少该时钟时回退到普通时间。结束时间和时长仅出现在终态记录中。
 
@@ -37,7 +37,7 @@ Handler 上下文现在包含 `providers`、`dispatch`、`actionId`、`execution
 - `trace.enabled`：追踪是否开启。
 - `trace.size`：当前保留记录数。
 - `trace.get(executionId)`：查询单次执行。
-- `trace.list({ traceId?, actionId?, status? })`：按开始顺序查询记录。
+- `trace.list({ traceId?, actionId?, status?, scenarioId?, scenarioRunId? })`：按开始顺序查询记录。
 - `trace.getTrace(traceId)`：读取同一调用链的记录，通过父 ID 还原树。
 - `trace.droppedRecords`：因容量被移除的记录数。
 - `trace.clear()`：清空记录并重置丢弃计数，不取消任务或移除订阅。
@@ -104,4 +104,4 @@ Runtime 在进入处理链、进入 Handler、进入每层 Middleware 和成功�
 
 ## 可运行验收
 
-`pnpm example:trace` 展示两条并发成功调用树、父子异常传播、执行中取消和生命周期事件数。`pnpm example:browser` 提供真实浏览器中的 11 项 Core/Trace 验收。它们是开发示例与检查入口，尚不是 DevTools。
+`pnpm example:trace` 展示两条并发成功调用树、父子异常传播、执行中取消和生命周期事件数。`pnpm example:browser` 提供真实浏览器中的 16 项 Core/Scenario 验收。`pnpm example:scenario` 演示场景隔离和本地 Trace，详见 [Scenario](scenario.md)。这些是开发示例与检查入口，尚不是 DevTools。

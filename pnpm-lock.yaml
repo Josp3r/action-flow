@@ -23,11 +23,20 @@ importers:
 
   packages/core: {}
 
+  packages/scenario:
+    dependencies:
+      '@action-flow/core':
+        specifier: workspace:*
+        version: link:../core
+
   playground/basic:
     dependencies:
       '@action-flow/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@action-flow/scenario':
+        specifier: workspace:*
+        version: link:../../packages/scenario
 
 packages:
 

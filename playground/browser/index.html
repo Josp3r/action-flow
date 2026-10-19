@@ -16,11 +16,12 @@
 </head>
 <body>
   <p>ActionFlow / Browser compatibility</p>
-  <h1>在真实浏览器中验证 Core</h1>
-  <p>直接加载构建后的 ESM 产物，检查 Core、执行追踪、Middleware 和协作取消。</p>
+  <h1>在真实浏览器中验证 Core 与 Scenario</h1>
+  <p>直接加载构建后的 ESM 产物，检查执行追踪、Middleware、取消和场景隔离。控制台可使用 <code>actionFlowDemo</code> 手动执行场景。</p>
   <button id="run" type="button">重新运行验收</button>
   <p id="summary" role="status" aria-live="polite">正在运行…</p>
   <ol id="results"></ol>
+  <script type="importmap">{"imports":{"@action-flow/core":"/packages/core/dist/index.js"}}</script>
   <script type="module">
     const summary = document.querySelector("#summary");
     const results = document.querySelector("#results");
@@ -128,6 +129,49 @@
           catch (error) { actual = error; }
           assert(actual === controller.signal.reason, "Abort reason was changed");
           assert(traced.trace.list()[0].status === "cancelled", "Cancellation state mismatch");
+        });
+        const { createScenarioRunner } = await import("/packages/scenario/dist/index.js");
+        const debugRuntime = createRuntime({ providers: { prefix: "live" }, modules: [module], environment: "development" });
+        const runner = createScenarioRunner(debugRuntime);
+        const releases = [];
+        const success = runner.defineScenario({ id: "browser.success", action: "browser.parent", input: "hello",
+          providers: { prefix: "scenario" }, setup(ctx) { ctx.defer(() => releases.push(ctx.runId)); },
+        });
+        const mocked = runner.defineScenario({ id: "browser.mock", action: "browser.parent", input: "hello",
+          mocks: { "browser.echo": { type: "return", value: "mocked result" } },
+        });
+        const conflict = runner.defineScenario({ id: "browser.conflict", action: "browser.parent", input: "hello",
+          mocks: { "browser.echo": { type: "throw", error: failure } },
+        });
+        globalThis.actionFlowDemo = Object.freeze({ runtime: debugRuntime, runner, scenarios: Object.freeze({ success, mocked, conflict }) });
+        await check("Scenario 依赖覆盖、完整子调用与 Fixture 释放", async () => {
+          const result = await runner.run(success);
+          assert(result.status === "success" && result.output === "scenario:hello", "Scenario output mismatch");
+          assert(result.trace.length === 2 && result.trace.every((record) => record.scenarioRunId === result.runId), "Scenario trace mismatch");
+          assert(releases.includes(result.runId), "Fixture was not released");
+        });
+        await check("Scenario Mock 只影响本次调用及后代", async () => {
+          const [result, normal] = await Promise.all([runner.run(mocked), debugRuntime.dispatch("browser.parent", "normal")]);
+          assert(result.status === "success" && result.output === "mocked result", "Mock was ignored");
+          assert(normal === "live:normal", "Mock leaked into normal dispatch");
+        });
+        await check("Scenario 异常身份与失败调用树", async () => {
+          const result = await runner.run(conflict);
+          assert(result.status === "error" && result.error === failure, "Scenario changed the error");
+          assert(result.trace.length === 2 && result.trace.every((record) => record.status === "error"), "Failure tree mismatch");
+        });
+        await check("并发 Scenario 的覆盖、Run ID 和 Trace 隔离", async () => {
+          const [one, two] = await Promise.all([runner.run(success), runner.run(mocked)]);
+          assert(one.output === "scenario:hello" && two.output === "mocked result", "Overrides crossed runs");
+          assert(one.runId !== two.runId && one.traceId !== two.traceId, "Concurrent identities collided");
+        });
+        await check("生产默认禁止 Scenario，执行前拒绝生命周期回调", async () => {
+          const disabled = createScenarioRunner(runtime);
+          let entered = false;
+          const scenario = disabled.defineScenario({ id: "disabled", action: "browser.echo", input: "", setup() { entered = true; } });
+          let rejected = false;
+          try { await disabled.run(scenario); } catch (error) { rejected = error.name === "DebugDisabledError"; }
+          assert(rejected && !entered, "Production debug policy failed");
         });
       } catch (error) {
         failed++;

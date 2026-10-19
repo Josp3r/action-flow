@@ -22,8 +22,14 @@ Trace 组件提供有容量上限的内存存储、冻结快照、查询与订�
 
 创建 Runtime 时复制并冻结 Providers 顶层绑定，防止替换外部配置对象中的属性影响已创建的 Runtime。依赖对象自身保持原引用，因此 API 客户端、Router、外部 Store 的身份和行为得以保留。
 
-每个 Runtime 拥有独立 Registry 和依赖绑定。外部业务对象若被调用方共享，其状态也会共享；当前实现并不提供深拷贝或 Scenario 隔离保证。Scenario Override 与 Fixture 作用域属于 Milestone 3。
+每个 Runtime 拥有独立 Registry 和依赖绑定。外部业务对象若被调用方共享，其状态也会共享；SDK 不进行深拷贝。Scenario 使用 Core 调试作用域覆盖顶层绑定，依靠闭包向后代传播，不修改全局 Handler 或 Providers。通过 Factory 创建可变依赖可让并发运行持有独立实例。
+
+## Scenario 分层
+
+`@action-flow/scenario` 只依赖 Core 公开接口，负责类型定义、注册、Provider/Mock Factory、Fixture 和结果封装。Mock 是作用域内追加的 Middleware，Runtime 原有 Middleware 仍包裹它。根和后代同时写入 Runtime 与本地 Trace，各自应用容量和采集策略。
+
+作用域在开始执行前登记 Promise，避免同步观察者关闭作用域时遗漏任务。关闭先拒绝新根调用，再等待所有已启动任务；活跃后代可派生子调用，已结束调用泄漏的 Dispatch 在关闭后拒绝。Runner 待后代终结后执行 cleanup 和逆序 defer，收集全部释放错误。生产默认禁止调试，在创建作用域和运行场景前检查。详见 [Scenario 生命周期](scenario.md)。
 
 ## 打包边界
 
-Core 只有 TypeScript 源码，运行时零依赖。以 TypeScript 编译器直接输出 ESM 和类型声明，先避免额外打包层。测试、示例执行器与 Changesets 仅作为工作区开发依赖。Core 不使用 `window`、`document`、Node.js 专属 API 或导入时自动注册。
+Core 运行时零依赖，Scenario 唯一的运行时依赖是 Core。两者通过 TypeScript 编译器输出 ESM 和类型声明。测试、示例执行器与 Changesets 仅作为工作区开发依赖。两包不使用 `window`、`document`、Node.js 专属 API 或导入时自动注册。

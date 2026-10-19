@@ -12,6 +12,8 @@ export interface ActionContext<Providers extends object = object, Contract = nev
   readonly traceId: string;
   readonly parentExecutionId?: string;
   readonly signal: AbortSignal;
+  readonly scenarioId?: string;
+  readonly scenarioRunId?: string;
 }
 
 export interface ActionMetadata {

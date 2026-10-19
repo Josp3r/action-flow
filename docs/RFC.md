@@ -1,6 +1,6 @@
 # RFC 001：显式 Contract 与跨模块 Dispatch
 
-状态：显式 Contract 和 Execution & Trace 已实施，Milestone 1、2 验收已完成。Scenario 和 DevTools 继续按下述计划推进。
+状态：显式 Contract、Execution & Trace 和 Scenario 已实施，Milestone 1–3 验收已完成。下一阶段为 DevTools。
 
 ## 设计决策
 
@@ -70,7 +70,9 @@ Contract 可以描述全部应用能力，也可以只描述一组 Handler 所�
 
 验收已覆盖嵌套调用、并发根调用与子调用的真实关系、状态迁移、异常、取消、订阅者抛错隔离、容量回收和 Trace 关闭时的正常执行。默认环境为 production，不自动读取宿主环境；development/test 默认开启结构追踪。详情采集需显式开启，Middleware 属于可改变执行结果的动态边界。
 
-## 后续：Scenario
+## Scenario（已实施）
+
+独立包通过 `createScenarioRunner(runtime)` 绑定类型和注册信息，保留唯一的 `runner.defineScenario` 定义入口。Core `createDebugScope` 提供执行级隔离；Mock 使用作用域 Middleware。最终 API 见 [Scenario](scenario.md)。
 
 - Override 仅作用于本次 Scenario 及其全部子调用，不修改 Runtime Providers，也不深拷贝业务对象或增加依赖生命周期容器。
 - 支持类型关联的 Action 输入、Provider Override、结果/异常 Mock、Fixture Setup/Cleanup，以及执行结果和 Trace 检查。

@@ -14,3 +14,5 @@ export { DuplicateActionError, UnknownActionError } from "./registry/action-regi
 export type { ActionRegistration, ActionRegistry } from "./registry/action-registry.js";
 export { createRuntime } from "./runtime/create-runtime.js";
 export type { Runtime } from "./runtime/create-runtime.js";
+export { DebugDisabledError, DebugScopeClosedError } from "./runtime/debug-scope.js";
+export type { DebugScope, DebugScopeOptions } from "./runtime/debug-scope.js";

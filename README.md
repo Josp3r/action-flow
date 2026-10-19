@@ -1,8 +1,8 @@
 # ActionFlow
 
-框架无关、以 Dispatch 为核心的 TypeScript Action Runtime。统一管理业务行为，通过注入外部依赖独立执行，并为后续 Trace 和 Scenario 调试提供基础。
+框架无关、以 Dispatch 为核心的 TypeScript Action Runtime。统一管理业务行为，通过依赖注入独立执行，并用 Trace 和 Scenario 复现业务分支。
 
-目前已完成 **Core Runtime 与 Execution & Trace**：静态类型安全的 Dispatch、模块与 Registry、Providers 注入、显式 Contract，以及支持并发调用关系的执行记录、内存追踪、Middleware 和 AbortSignal。整体 MVP 仍在开发，Scenario 和 DevTools 尚未实现。包尚未发布。
+目前已完成 **Core Runtime、Execution & Trace 和 Scenario**：静态类型安全的 Dispatch、显式 Contract、追踪、Middleware、取消，以及独立场景包中的依赖覆盖、Action Mock 和 Fixture 清理。整体 MVP 仍在开发，下一阶段为 DevTools。包尚未发布。
 
 ## 开发
 
@@ -13,9 +13,10 @@ pnpm install
 pnpm check
 pnpm example
 pnpm example:trace
+pnpm example:scenario
 ```
 
-`pnpm check` 先构建 Core，再执行类型检查和 Vitest 测试；示例的类型检查会使用实际构建出的声明文件。`pnpm example` 构建 Core 后运行 [基础示例](playground/basic/index.ts)，展示 Registry、类型推导、跨模块调用及异常传播。
+`pnpm check` 按依赖顺序构建 Core 和 Scenario，再执行类型检查和 Vitest 测试；示例使用实际构建出的声明文件。`pnpm example` 运行 [基础示例](playground/basic/index.ts)，展示 Registry、类型推导、跨模块调用及异常传播。
 
 补充验收入口：
 
@@ -78,6 +79,12 @@ runtime.registry.list();
 
 运行 `pnpm example:trace` 可看到并发调用树、异常和取消状态。执行标识、Middleware、脱敏、容量回收及取消语义见 [执行与追踪说明](docs/execution-trace.md)。
 
+## 场景复现
+
+`createScenarioRunner(runtime)` 来自独立包 `@action-flow/scenario`。用 `runner.defineScenario({ id, action, input, providers?, mocks?, setup?, cleanup? })` 定义场景，随后 `await runner.run(scenario)` 获取结果与本次 Trace。Runtime 需要使用 development/test 环境或显式开启 `allowDebug`。
+
+运行 `pnpm example:scenario` 查看登录成功、网络错误和冲突分支，或在浏览器验收页控制台执行 `await actionFlowDemo.runner.run(actionFlowDemo.scenarios.conflict)`。完整 API 与清理语义见 [Scenario 说明](docs/scenario.md)。
+
 ## 当前边界
 
 - `runtime.dispatch` 根据静态注册模块校验 ID、Payload 和返回类型；不会自动验证来自网络或 JavaScript 调用方的数据。
@@ -86,7 +93,8 @@ runtime.registry.list();
 - Registry 为静态只读快照。重复 Action ID 在创建 Runtime 时抛错；未知 ID 在 Dispatch 时拒绝。
 - Core 没有运行时依赖，不访问浏览器或 Node.js 专有全局对象。当前构建为 ESM，尚未验证的兼容能力见 [路线图](docs/roadmap.md)。
 - Trace 使用有容量上限的内存存储，不默认持久化；取消为协作机制，不会回滚业务副作用。
-- Scenario、动态注册和 DevTools 尚未实现。
+- Scenario 用独立作用域隔离顶层绑定和 Mock；可变对象需要用 Factory 创建，SDK 不进行深拷贝。生产默认禁止调试执行，可显式配置 `allowDebug`。
+- 动态注册和 DevTools 尚未实现。
 
 ## 文档
 
@@ -95,6 +103,7 @@ runtime.registry.list();
 - [核心结构与执行边界](docs/architecture.md)
 - [API 说明](docs/api-design.md)
 - [执行、追踪、Middleware 与取消](docs/execution-trace.md)
+- [Scenario、Mock、Fixture 与控制台验证](docs/scenario.md)
 - [里程碑与验收进度](docs/roadmap.md)
 
 ## License

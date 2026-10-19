@@ -13,14 +13,17 @@ function run(command, args, cwd = directory) {
   return result.stdout;
 }
 try {
-  run("pnpm", ["--filter", "@action-flow/core", "pack", "--pack-destination", directory], root);
-  const archive = (await readdir(directory)).find((name) => name.endsWith(".tgz"));
-  if (!archive) throw new Error("No package archive was produced.");
+  for (const name of ["@action-flow/core", "@action-flow/scenario"]) {
+    run("pnpm", ["--filter", name, "pack", "--pack-destination", directory], root);
+  }
+  const archives = (await readdir(directory)).filter((name) => name.endsWith(".tgz"));
+  if (archives.length !== 2) throw new Error("Expected Core and Scenario archives.");
   await writeFile(join(directory, "package.json"), JSON.stringify({ private: true, type: "module" }));
-  run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", "--package-lock=false", "--cache", join(directory, "cache"), join(directory, archive)]);
+  run("npm", ["install", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", "--package-lock=false", "--cache", join(directory, "cache"), ...archives.map((archive) => join(directory, archive))]);
   run(process.execPath, ["--input-type=module", "--eval", `
     import { createRuntime, defineAction, defineModule } from '@action-flow/core';
-    const runtime = createRuntime({ providers: {}, trace: true, modules: [defineModule('consumer', {
+    import { createScenarioRunner } from '@action-flow/scenario';
+    const runtime = createRuntime({ providers: {}, environment: 'test', trace: true, modules: [defineModule('consumer', {
       double: defineAction({ handler: (input) => input * 2 }),
       parent: defineAction({ handler: (input, ctx) => ctx.dispatch('consumer.double', input) }),
     })] });
@@ -37,10 +40,27 @@ try {
     } catch (error) {
       if (error !== controller.signal.reason) throw error;
     }
+    const runner = createScenarioRunner(runtime);
+    let released = false;
+    const scenario = runner.defineScenario({ id: 'packaged.mock', action: 'consumer.parent', input: 3,
+      mocks: { 'consumer.double': { type: 'return', value: 42 } },
+      setup(ctx) { ctx.defer(() => { released = true; }); },
+    });
+    const result = await runner.run(scenario);
+    if (result.status !== 'success' || result.output !== 42 || result.trace.length !== 2 || !released) throw new Error('Packaged Scenario failed');
+    if (result.trace.some(record => record.scenarioRunId !== result.runId)) throw new Error('Packaged Scenario trace tags failed');
+    if (await runtime.dispatch('consumer.parent', 3) !== 6) throw new Error('Packaged mocks leaked');
+    const disabled = createScenarioRunner(createRuntime({ providers: {}, modules: [defineModule('prod', { run: defineAction({ handler: () => 1 }) })] }));
+    try {
+      await disabled.run(disabled.defineScenario({ id: 'disabled', action: 'prod.run' }));
+      throw new Error('Production scenarios enabled by default');
+    } catch (error) { if (error.name !== 'DebugDisabledError') throw error; }
   `]);
   await writeFile(join(directory, "consumer.ts"), `
     import { createActionFactory, createRuntime, defineModule } from '@action-flow/core';
     import type { ActionSignature, ExecutionRecord, TraceEvent } from '@action-flow/core';
+    import { createScenarioRunner } from '@action-flow/scenario';
+    import type { ScenarioResult } from '@action-flow/scenario';
     interface Contract {
       'consumer.double': ActionSignature<number, number>;
       'consumer.parent': ActionSignature<number, number>;
@@ -73,13 +93,29 @@ try {
     createRuntime({ providers: {}, modules: [defineModule('consumer', { parent })] });
     // @ts-expect-error packaged options preserve AbortSignal types
     runtime.dispatch('consumer.parent', 3, { signal: 'incorrect' });
+    const runner = createScenarioRunner(runtime);
+    const scenario = runner.defineScenario({ id: 'typed', action: 'consumer.parent', input: 3,
+      mocks: { 'consumer.double': { type: 'return', value: 9 } },
+    });
+    const scenarioResult: Promise<ScenarioResult<number>> = runner.run(scenario);
+    // @ts-expect-error Scenario input follows selected Action
+    runner.defineScenario({ id: 'bad', action: 'consumer.parent', input: 'incorrect' });
+    // @ts-expect-error Scenario mocks follow target output
+    runner.defineScenario({ id: 'bad', action: 'consumer.parent', input: 3, mocks: { 'consumer.double': { type: 'return', value: 'incorrect' } } });
+    // @ts-expect-error Scenario rejects unknown IDs
+    runner.defineScenario({ id: 'bad', action: 'missing.action', input: 3 });
+    void scenarioResult;
     void result; void controlled; void records;
   `);
   run(resolve(root, "node_modules/.bin/tsc"), ["--strict", "--target", "ES2022", "--module", "NodeNext", "--moduleResolution", "NodeNext", "--noEmit", "consumer.ts"]);
   const metadata = JSON.parse(await readFile(join(directory, "node_modules/@action-flow/core/package.json"), "utf8"));
   if (Object.keys(metadata.dependencies ?? {}).length !== 0) throw new Error("Core must have no runtime dependencies.");
-  for (const name of ["README.md", "LICENSE"]) await readFile(join(directory, "node_modules/@action-flow/core", name));
-  console.log("Packaged consumer passed: ESM, nested traces, cancellation, exported types, negative type checks, zero dependencies, README and license.");
+  const scenarioMetadata = JSON.parse(await readFile(join(directory, "node_modules/@action-flow/scenario/package.json"), "utf8"));
+  if (Object.keys(scenarioMetadata.dependencies).join() !== "@action-flow/core" || scenarioMetadata.dependencies["@action-flow/core"] !== metadata.version) throw new Error("Scenario must depend only on the released Core version.");
+  for (const packageName of ["core", "scenario"]) {
+    for (const name of ["README.md", "LICENSE"]) await readFile(join(directory, `node_modules/@action-flow/${packageName}`, name));
+  }
+  console.log("Packaged consumers passed: Core + Scenario ESM, nested traces, cancellation, isolated mocks, fixtures, production guard, exported types, negative type checks, dependencies, READMEs and licenses.");
 } finally {
   await rm(directory, { recursive: true, force: true });
 }

@@ -5,6 +5,8 @@ export interface ExecutionRecord {
   readonly traceId: string;
   readonly parentExecutionId?: string;
   readonly actionId: string;
+  readonly scenarioId?: string;
+  readonly scenarioRunId?: string;
   readonly status: ExecutionStatus;
   /** Unix milliseconds, suitable for display alongside other application events. */
   readonly startTime: number;
@@ -36,6 +38,8 @@ export interface TraceQuery {
   readonly traceId?: string;
   readonly actionId?: string;
   readonly status?: ExecutionStatus;
+  readonly scenarioId?: string;
+  readonly scenarioRunId?: string;
 }
 
 export type TraceListener = (event: TraceEvent) => void;

@@ -44,7 +44,7 @@ Providers 必须满足所有 Action 声明的依赖。Dispatch 始终返回 Prom
 
 Contract 模式要求静态可确定的模块集合：直接传 `[auth, account]`，或保存为 `const modules = [auth, account] as const`。普通可变数组、存在联合可能性的模块或 Namespace、宽泛的字符串 Namespace/Action 索引签名和可选 Action 不能证明注册完整，因此会被拒绝。未使用 Contract 的 Runtime 保留原有数组接入方式。
 
-错误包括 `DuplicateActionError`（创建 Runtime 时）和 `UnknownActionError`（执行时），均包含 `actionId`。业务错误不包装。Dispatch 的可选第三个参数为 `{ signal?: AbortSignal }`，不会改变 ID 与输入的类型关联。Runtime 还支持 `environment`、`trace` 和 `middleware`；详见 [执行与追踪说明](execution-trace.md)。当前没有输入 Schema 校验。
+错误包括 `DuplicateActionError`（创建 Runtime 时）和 `UnknownActionError`（执行时），均包含 `actionId`。业务错误不包装。Dispatch 的可选第三个参数为 `{ signal?: AbortSignal }`，不会改变 ID 与输入的类型关联。Runtime 还支持 `environment`、`trace`、`middleware` 和 `allowDebug`；详见 [执行与追踪说明](execution-trace.md) 和 [Scenario](scenario.md)。当前没有输入 Schema 校验。
 
 ## ctx.dispatch / ctx.providers
 
@@ -84,3 +84,9 @@ Contract 不增加运行时注册表、字段或输入验证器。它不能验�
 - `list()`：按注册顺序返回冻结的元数据数组。
 
 元数据包含 `id`、`namespace`、`name`、可选 `description` 和 `tags`。Registry 不暴露执行函数，不记录 Payload、结果或错误。
+
+## Scenario 与调试作用域
+
+独立包 `@action-flow/scenario` 提供 `createScenarioRunner(runtime)`、`runner.defineScenario(definition)`、`runner.run(definition, { signal? })`、`runner.get(id)` 和 `runner.list()`。输入和 Mock 输出关联于注册的 Action；结果含状态、结果/原始错误、Scenario/Run/根执行 ID、本地 Trace 和清理错误。生命周期见 [Scenario](scenario.md)。
+
+Core 的 `runtime.providers` 暴露冻结的基础绑定，`runtime.debugEnabled` 表示最终调试策略。`runtime.createDebugScope(options)` 创建独立 Providers、Middleware、Trace，`close()` 拒绝新根调用并等待已启动后代结束。关闭后执行拒绝为 `DebugScopeClosedError`；禁止调试时创建作用域抛出 `DebugDisabledError`。
