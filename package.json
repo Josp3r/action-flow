@@ -1,0 +1,26 @@
+{
+  "name": "action-flow-workspace",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.34.5",
+  "engines": { "node": "^22.12.0 || ^24.0.0 || >=26.0.0" },
+  "scripts": {
+    "build": "pnpm --filter @action-flow/core build",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "example": "pnpm build && node --import tsx playground/basic/index.ts",
+    "example:browser": "pnpm build && node scripts/serve-browser.mjs",
+    "bench": "pnpm build && node scripts/benchmark.mjs",
+    "check:package": "pnpm build && node scripts/check-package.mjs",
+    "release:pack": "pnpm build && pnpm --filter @action-flow/core pack --pack-destination artifacts",
+    "check": "pnpm build && pnpm typecheck && pnpm test",
+    "changeset": "changeset"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^3.0.3",
+    "tsx": "^4.23.15",
+    "typescript": "~7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

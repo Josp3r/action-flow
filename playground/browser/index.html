@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ActionFlow · 浏览器兼容性验收</title>
+  <style>
+    :root { color-scheme: light dark; font: 16px/1.6 system-ui, sans-serif; }
+    body { max-width: 760px; margin: 8vh auto; padding: 0 24px; }
+    h1 { font-size: 28px; letter-spacing: -.04em; }
+    button { font: inherit; padding: 8px 16px; cursor: pointer; }
+    li { margin: 10px 0; }
+    code { font-family: ui-monospace, monospace; }
+    #summary { font-weight: 600; }
+  </style>
+</head>
+<body>
+  <p>ActionFlow / Browser compatibility</p>
+  <h1>在真实浏览器中验证 Core</h1>
+  <p>直接加载构建后的 ESM 产物，检查 Action 注册、依赖注入、嵌套调用和错误传播。</p>
+  <button id="run" type="button">重新运行验收</button>
+  <p id="summary" role="status" aria-live="polite">正在运行…</p>
+  <ol id="results"></ol>
+  <script type="module">
+    const summary = document.querySelector("#summary");
+    const results = document.querySelector("#results");
+    const button = document.querySelector("#run");
+    async function run() {
+      results.replaceChildren();
+      button.disabled = true;
+      summary.textContent = "正在运行…";
+      let passed = 0;
+      let failed = 0;
+      const check = async (name, execute) => {
+        const item = document.createElement("li");
+        try {
+          await execute();
+          item.textContent = `通过 · ${name}`;
+          passed++;
+        } catch (error) {
+          item.textContent = `失败 · ${name}：${error instanceof Error ? error.message : String(error)}`;
+          failed++;
+        }
+        results.append(item);
+      };
+      const assert = (condition, message) => { if (!condition) throw new Error(message); };
+      try {
+        const { createRuntime, createActionFactory, defineAction, defineModule, DuplicateActionError, UnknownActionError } =
+          await import("/packages/core/dist/index.js");
+        const action = createActionFactory();
+        const failure = new Error("Expected failure");
+        const module = defineModule("browser", {
+          echo: action.define({ handler: (input, ctx) => `${ctx.providers.prefix}:${input}` }),
+          parent: action.define({ handler: (input, ctx) => ctx.dispatch("browser.echo", input) }),
+          fail: defineAction({ handler: () => { throw failure; } }),
+        });
+        const runtime = createRuntime({ providers: { prefix: "web" }, modules: [module] });
+        await check("ESM 导入与 Registry", () => {
+          assert(runtime.registry.size === 3 && runtime.registry.has("browser.echo"), "Registry mismatch");
+        });
+        await check("依赖注入与同步结果", async () => {
+          assert(await runtime.dispatch("browser.echo", "hello") === "web:hello", "Provider mismatch");
+        });
+        await check("嵌套调用", async () => {
+          assert(await runtime.dispatch("browser.parent", "nested") === "web:nested", "Nested result mismatch");
+        });
+        await check("并发结果关联", async () => {
+          const values = await Promise.all([runtime.dispatch("browser.echo", "one"), runtime.dispatch("browser.echo", "two")]);
+          assert(values.join(",") === "web:one,web:two", "Concurrent result mismatch");
+        });
+        await check("原始异常传播", async () => {
+          let actual;
+          try { await runtime.dispatch("browser.fail"); } catch (error) { actual = error; }
+          assert(actual === failure, "Error identity mismatch");
+        });
+        await check("未知 Action 拒绝", async () => {
+          let actual;
+          try { await runtime.dispatch("missing.action"); } catch (error) { actual = error; }
+          assert(actual instanceof UnknownActionError, "Unknown Action was accepted");
+        });
+        await check("重复 Action 拒绝", () => {
+          let actual;
+          try { createRuntime({ providers: {}, modules: [module, module] }); } catch (error) { actual = error; }
+          assert(actual instanceof DuplicateActionError, "Duplicate Action was accepted");
+        });
+      } catch (error) {
+        failed++;
+        const item = document.createElement("li");
+        item.textContent = `加载失败：${error instanceof Error ? error.message : String(error)}`;
+        results.append(item);
+      } finally {
+        summary.textContent = `${passed} 项通过，${failed} 项失败`;
+        document.documentElement.dataset.testStatus = failed ? "failed" : "passed";
+        button.disabled = false;
+      }
+    }
+    button.addEventListener("click", run);
+    await run();
+  </script>
+</body>
+</html>

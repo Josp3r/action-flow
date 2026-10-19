@@ -1,0 +1,22 @@
+# @action-flow/core
+
+Framework-agnostic, dispatch-driven action runtime for TypeScript.
+
+```ts
+import { createRuntime, defineAction, defineModule } from "@action-flow/core";
+
+const math = defineModule("math", {
+  double: defineAction({ handler: (input: number) => input * 2 }),
+});
+
+const runtime = createRuntime({ providers: {}, modules: [math] });
+const result = await runtime.dispatch("math.double", 3); // number: 6
+```
+
+Define modules with `defineModule(namespace, actionsMap)`. The namespace and action types are preserved.
+
+Includes typed static dispatch, modules, injected providers, a read-only action registry, and nested execution. Use `createActionFactory<Providers, Contract>()` with `ActionSignature<Input, Output>` entries for typed cross-module `ctx.dispatch`. Runtime assembly checks that each required target is registered with a compatible implementation. Contract-enabled module lists must be statically known; use `as const` when storing the list in a variable. Factories without a contract retain the dynamic `Promise<unknown>` boundary. Contracts are compile-time checks, not runtime schemas. Trace, scenarios, middleware, cancellation, and DevTools are planned.
+
+See the [repository documentation](https://github.com/Josp3r/action-flow) for provider factories, development commands, and design boundaries. This package is ESM and has no runtime dependencies.
+
+MIT

@@ -1,0 +1,6 @@
+{
+  "name": "@action-flow/playground-basic",
+  "private": true,
+  "type": "module",
+  "dependencies": { "@action-flow/core": "workspace:*" }
+}
