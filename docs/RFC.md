@@ -1,6 +1,6 @@
 # RFC 001：显式 Contract 与跨模块 Dispatch
 
-状态：显式 Contract、Execution & Trace 和 Scenario 已实施，Milestone 1–3 验收已完成。下一阶段为 DevTools。
+状态：Core、Execution & Trace、Scenario 和 DevTools 已实施，Milestone 1–4 验收已完成。下一阶段为版本与发布收尾。
 
 ## 设计决策
 
@@ -81,6 +81,8 @@ Contract 可以描述全部应用能力，也可以只描述一组 Handler 所�
 
 验收重点是同一 Action 的不同分支、并发 Scenario 隔离，以及普通业务 Dispatch 不受覆盖影响。
 
-## 后续：DevTools 与其他边界
+## DevTools（已实施）与其他边界
 
-调试 UI 与 Core 分包，正常导入 Core 时不包含调试界面。UI 框架与连接方式在实施时确定。浏览器兼容性页仅作为验收工具，不视为 DevTools。Schema、动态注册、调度策略和 Provider 生命周期不在本次 Core 收尾中扩展。
+调试 UI 独立为 `@action-flow/devtools`，使用原生 DOM/Shadow DOM 和浏览器内直接连接，不依赖 UI 框架。正常导入 Core/Scenario 不包含界面；显式挂载时检查 Runtime 调试策略和 Runner 归属。Controller 为每次运行管理独立作用域、实时事件和有上限的历史。Scenario 的 `runtime` 公开归属，`run({ onTrace })` 为本次调用提供隔离的实时观察。
+
+已实现 Action 搜索、JSON 输入、Scenario 选择、结果、历史、取消和可展开 Trace，详见 [DevTools](devtools.md)。Schema、动态注册、调度策略、远程连接与生产诊断不在本阶段扩展。

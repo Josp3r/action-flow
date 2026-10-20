@@ -16,3 +16,4 @@ export { createRuntime } from "./runtime/create-runtime.js";
 export type { Runtime } from "./runtime/create-runtime.js";
 export { DebugDisabledError, DebugScopeClosedError } from "./runtime/debug-scope.js";
 export type { DebugScope, DebugScopeOptions } from "./runtime/debug-scope.js";
+export { snapshotTraceValue } from "./trace/snapshot.js";

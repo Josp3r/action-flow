@@ -2,7 +2,7 @@
 
 框架无关、以 Dispatch 为核心的 TypeScript Action Runtime。统一管理业务行为，通过依赖注入独立执行，并用 Trace 和 Scenario 复现业务分支。
 
-目前已完成 **Core Runtime、Execution & Trace 和 Scenario**：静态类型安全的 Dispatch、显式 Contract、追踪、Middleware、取消，以及独立场景包中的依赖覆盖、Action Mock 和 Fixture 清理。整体 MVP 仍在开发，下一阶段为 DevTools。包尚未发布。
+目前已完成 **Core Runtime、Execution & Trace、Scenario 和 DevTools**：可从浏览器选择 Action、编辑输入、运行场景，并查看结果和实时调用树。MVP 的功能闭环已完成，下一阶段为版本与发布收尾。三个包尚未发布。
 
 ## 开发
 
@@ -14,9 +14,12 @@ pnpm check
 pnpm example
 pnpm example:trace
 pnpm example:scenario
+pnpm example:devtools
 ```
 
-`pnpm check` 按依赖顺序构建 Core 和 Scenario，再执行类型检查和 Vitest 测试；示例使用实际构建出的声明文件。`pnpm example` 运行 [基础示例](playground/basic/index.ts)，展示 Registry、类型推导、跨模块调用及异常传播。
+`pnpm check` 按依赖顺序构建 Core、Scenario、DevTools，再执行类型检查和 Vitest 测试；示例使用实际构建出的声明文件。`pnpm example` 运行 [基础示例](playground/basic/index.ts)，展示 Registry、类型推导、跨模块调用及异常传播。
+
+`pnpm example:devtools` 启动本地服务，打开 [DevTools](http://127.0.0.1:4173/devtools/) 即可交互调试。接入和验收方式见 [DevTools 文档](docs/devtools.md)。
 
 补充验收入口：
 
@@ -94,7 +97,8 @@ runtime.registry.list();
 - Core 没有运行时依赖，不访问浏览器或 Node.js 专有全局对象。当前构建为 ESM，尚未验证的兼容能力见 [路线图](docs/roadmap.md)。
 - Trace 使用有容量上限的内存存储，不默认持久化；取消为协作机制，不会回滚业务副作用。
 - Scenario 用独立作用域隔离顶层绑定和 Mock；可变对象需要用 Factory 创建，SDK 不进行深拷贝。生产默认禁止调试执行，可显式配置 `allowDebug`。
-- 动态注册和 DevTools 尚未实现。
+- DevTools 通过独立开发入口显式挂载，不会随 Core/Scenario 自动加载。JSON 编辑器只校验语法，业务输入由 Handler/应用校验。
+- 动态注册、远程调试和生产诊断服务尚未实现。
 
 ## 文档
 
@@ -104,6 +108,7 @@ runtime.registry.list();
 - [API 说明](docs/api-design.md)
 - [执行、追踪、Middleware 与取消](docs/execution-trace.md)
 - [Scenario、Mock、Fixture 与控制台验证](docs/scenario.md)
+- [DevTools 接入与交互验收](docs/devtools.md)
 - [里程碑与验收进度](docs/roadmap.md)
 
 ## License

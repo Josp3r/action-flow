@@ -29,6 +29,7 @@ export function createScenarioRunner<Actions, Providers extends object>(
     return entries;
   }
   const runner: ScenarioRunner<Actions, Providers> = {
+    runtime,
     defineScenario(definition) {
       if (typeof definition.id !== "string" || !definition.id.trim()) throw new TypeError("Scenario ID must be a non-empty string.");
       if (definitions.has(definition.id)) throw new Error(`Scenario "${definition.id}" is already registered.`);
@@ -58,6 +59,7 @@ export function createScenarioRunner<Actions, Providers extends object>(
       const scenarioId = definition.id;
       const runId = `af-scenario-${prefix}-${++sequence}`;
       const signal = runOptions.signal ?? new AbortController().signal;
+      const onTrace = runOptions.onTrace;
       const releases: (() => void | Promise<void>)[] = [];
       const cleanupErrors: unknown[] = [];
       let cleaning = false;
@@ -105,6 +107,7 @@ export function createScenarioRunner<Actions, Providers extends object>(
         checkAbort();
         unsubscribe = scope.trace.subscribe((event) => {
           if (event.type === "start" && event.record.parentExecutionId === undefined) root ??= event.record;
+          return onTrace?.(event);
         });
         // Definition validation preserves the ID/input relationship; execution erases only that internal union.
         const dispatch = scope.dispatch as unknown as ContextDispatch;

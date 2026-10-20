@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ActionFlow DevTools · 交互验收</title>
+  <style>body { font:14px/1.7 system-ui; margin:28px; color:#182538; } #sandbox { max-width:1300px; } li { margin:5px 0; }</style>
+  <script type="importmap">{"imports":{"@action-flow/core":"/packages/core/dist/index.js","@action-flow/scenario":"/packages/scenario/dist/index.js","@action-flow/devtools":"/packages/devtools/dist/index.js"}}</script>
+</head>
+<body>
+  <h1>DevTools 浏览器交互验收</h1><p id="summary" role="status">正在运行…</p><ol id="checks"></ol>
+  <p><a href="/devtools/">打开 DevTools 示例</a> · 刷新本页可重新验收。</p>
+  <div id="sandbox"></div>
+  <script type="module" src="/playground/browser/devtools-checks.js"></script>
+</body>
+</html>

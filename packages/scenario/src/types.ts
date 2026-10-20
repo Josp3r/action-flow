@@ -1,4 +1,4 @@
-import type { ActionInput, ActionOutput, ExecutionRecord, TraceOptions } from "@action-flow/core";
+import type { ActionInput, ActionOutput, ExecutionRecord, Runtime, TraceListener, TraceOptions } from "@action-flow/core";
 
 type Action = { readonly handler: (...args: never[]) => unknown };
 export type ScenarioActionId<Actions> = keyof Actions & string;
@@ -52,9 +52,14 @@ export type ScenarioResult<Output> = ScenarioResultBase & (
   | { readonly status: "error" | "cancelled"; readonly error: unknown }
 );
 export interface ScenarioRunnerOptions { readonly trace?: TraceOptions }
-export interface ScenarioRunOptions { readonly signal?: AbortSignal }
+export interface ScenarioRunOptions {
+  readonly signal?: AbortSignal;
+  /** Live events from this run only; observer errors never change its outcome. */
+  readonly onTrace?: TraceListener;
+}
 
 export interface ScenarioRunner<Actions, Providers extends object> {
+  readonly runtime: Runtime<Actions, Providers>;
   defineScenario<const Id extends ScenarioActionId<Actions>>(
     definition: ScenarioDefinition<Actions, Providers, Id>,
   ): ScenarioDefinition<Actions, Providers, Id>;

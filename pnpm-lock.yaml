@@ -23,6 +23,15 @@ importers:
 
   packages/core: {}
 
+  packages/devtools:
+    dependencies:
+      '@action-flow/core':
+        specifier: workspace:*
+        version: link:../core
+      '@action-flow/scenario':
+        specifier: workspace:*
+        version: link:../scenario
+
   packages/scenario:
     dependencies:
       '@action-flow/core':

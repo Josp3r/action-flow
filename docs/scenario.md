@@ -25,6 +25,8 @@ console.log(result.trace, result.cleanupErrors);
 
 `runner.defineScenario` 是唯一的定义入口。绑定 Runtime 后，Action ID、输入和 Mock 返回值均由注册信息推导。无输入的 Action 可省略 `input`；显式 `string | undefined` 仍需写 `input: undefined`。每次创建新输入时使用 `inputFactory(ctx)`，不能同时提供 `input`。函数 Payload 直接写在 `input` 中。
 
+`runner.runtime` 暴露该 Runner 所属的 Runtime，供 DevTools 检查归属。`runner.run(definition, { onTrace })` 可接收本次运行的实时 start/finish 事件，独立于其他并发调用；观察者同步抛错或异步拒绝不会改变结果。
+
 重复 Scenario ID、未知目标或静态 Mock ID、非法 Mock 描述在定义时拒绝。`runner.get(id)` 查询定义，`runner.list()` 返回冻结的列表；运行只接受同一个 Runner 注册的定义。定义、Provider 顶层绑定和静态 Mock 描述保存为冻结的浅快照。
 
 ## 覆盖与 Mock
@@ -80,4 +82,4 @@ await runner.run(scenarios.conflict);
 runtime.trace.list({ scenarioId: "browser.conflict" });
 ```
 
-这仍是兼容性验收页；Action 列表、Payload 编辑和可展开调用树的 DevTools 属于下一里程碑。
+交互式调试面板已提供于 `/devtools/`：Action 列表、Payload 编辑、Scenario 选择和可展开调用树见 [DevTools](devtools.md)。根路径仍保留兼容性验收页。

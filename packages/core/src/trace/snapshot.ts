@@ -30,7 +30,7 @@ export function snapshotTraceValue(value: unknown): unknown {
       let count = 0;
       for (const [key, descriptor] of Object.entries(descriptors)) {
         if (current instanceof Error && key === "stack") continue;
-        if (!(descriptor.enumerable || (current instanceof Error && ["name", "message", "cause"].includes(key)))) continue;
+        if (!(descriptor.enumerable || (current instanceof Error && ["name", "message", "cause", "errors"].includes(key)))) continue;
         if (count++ >= 100 || remaining <= 0) { result["[Truncated]"] = true; break; }
         result[key] = sensitiveKey.test(key) ? "[REDACTED]"
           : "value" in descriptor ? visit(descriptor.value, depth + 1) : "[Accessor]";

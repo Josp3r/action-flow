@@ -32,4 +32,6 @@ Trace 组件提供有容量上限的内存存储、冻结快照、查询与订�
 
 ## 打包边界
 
+`@action-flow/devtools` 依赖 Core/Scenario 的公开接口，使用原生 DOM 和 Shadow DOM 显式挂载。控制层不访问 DOM，可独立测试和导入；挂载层只在 mount 时读取目标的 ownerDocument。Core/Scenario 不反向依赖 UI。直接执行由调试作用域提供实时 Trace，Scenario 使用本次 onTrace 事件流；控制层独立限制历史和记录容量，卸载停止观察后取消并等待全部已启动工作。详情见 [DevTools](devtools.md)。
+
 Core 运行时零依赖，Scenario 唯一的运行时依赖是 Core。两者通过 TypeScript 编译器输出 ESM 和类型声明。测试、示例执行器与 Changesets 仅作为工作区开发依赖。两包不使用 `window`、`document`、Node.js 专属 API 或导入时自动注册。

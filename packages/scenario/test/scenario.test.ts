@@ -292,6 +292,17 @@ describe("fixtures and cancellation", () => {
 });
 
 describe("Scenario registration and debug policy", () => {
+  it("exposes its Runtime and isolates per-run live Trace observers", async () => {
+    const { runner, runtime } = makeRuntime();
+    expect(runner.runtime).toBe(runtime);
+    const scenario = runner.defineScenario({ id: "live", action: "test.parent", input: "x" });
+    const seen: string[] = [];
+    const first = runner.run(scenario, { onTrace(event) { seen.push(event.record.scenarioRunId!); throw "ignored"; } });
+    const second = runner.run(scenario, { onTrace: async () => { throw "async ignored"; } });
+    const [one, two] = await Promise.all([first, second]);
+    expect(one.status).toBe("success"); expect(two.status).toBe("success");
+    expect(seen).toEqual([one.runId, one.runId, one.runId, one.runId]);
+  });
   it("disables debug in production before executing any callbacks, while normal Dispatch works", async () => {
     const { runner, runtime } = makeRuntime({ production: true });
     const providers = vi.fn(() => ({})); const mocks = vi.fn(() => ({})); const setup = vi.fn(); const cleanup = vi.fn();

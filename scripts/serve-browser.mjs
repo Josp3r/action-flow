@@ -12,8 +12,9 @@ const server = createServer(async (request, response) => {
       return;
     }
     const pathname = new URL(request.url, "http://localhost").pathname;
-    const path = pathname === "/" ? "playground/browser/index.html" : pathname.slice(1);
-    if (!/^(?:playground\/browser\/|packages\/(?:core|scenario)\/dist\/)/u.test(path) || path.split("/").some((part) => part.startsWith(".")) || /[%\\]/u.test(path)) {
+    const path = pathname === "/" ? "playground/browser/index.html"
+      : ["/devtools", "/devtools/"].includes(pathname) ? "playground/browser/devtools.html" : pathname.slice(1);
+    if (!/^(?:playground\/browser\/|packages\/(?:core|scenario|devtools)\/dist\/)/u.test(path) || path.split("/").some((part) => part.startsWith(".")) || /[%\\]/u.test(path)) {
       response.writeHead(404).end("Not found");
       return;
     }
@@ -25,5 +26,8 @@ const server = createServer(async (request, response) => {
     response.writeHead(404).end("Not found");
   }
 });
-server.listen(port, "127.0.0.1", () => console.log(`ActionFlow browser checks: http://127.0.0.1:${port}`));
+server.listen(port, "127.0.0.1", () => {
+  console.log(`ActionFlow DevTools: http://127.0.0.1:${port}/devtools/`);
+  console.log(`Browser checks: http://127.0.0.1:${port}/`);
+});
 for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => server.close());

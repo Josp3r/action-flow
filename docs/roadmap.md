@@ -1,14 +1,14 @@
 # 实施进度与后续计划
 
-## 当前结论（2026-10-19）
+## 当前结论（2026-10-20）
 
-**Milestone 1–3：Core Runtime、Execution & Trace、Scenario 已完成。整体 MVP 尚未完成，下一阶段为 DevTools。** 前两阶段已推送 main；本轮新增独立 Scenario 包及 Core 调试作用域。
+**Milestone 1–4：Core Runtime、Execution & Trace、Scenario、DevTools 已完成。MVP 功能闭环已验收；版本与发布收尾仍待完成。** 本轮新增独立 DevTools 包、浏览器调试工作台及可重复的交互验收。
 
 按 [项目成功标准](project-background.md#15-项目成功标准) 对照：
 
 - **统一管理业务行为：已验证。** Registry 可列出、查询 Action，并拒绝重复 ID。
 - **独立执行业务行为：已验证。** Dispatch 和 Providers 可脱离页面运行，显式 Contract 支持完整类型安全的嵌套调用，结果及原始异常正确传播。
-- **稳定复现业务分支并观察完整 Trace：程序接口已验证。** 同一个登录 Action 可复现成功、网络错误和冲突分支；支持覆盖、Mock、Fixture 和并发隔离。调用链可通过结果和 Trace API 检查；可视化调试界面仍待完成。容量不足时 Trace 会截断并报告丢弃数。
+- **稳定复现业务分支并观察完整 Trace：程序接口与浏览器流程已验证。** 可在面板选择同一个登录 Action 的成功、网络错误和冲突分支，检查结果、父子关系、状态和耗时，支持取消、Fixture 错误及并发隔离。容量不足时 Trace 截断并报告丢弃数。
 
 ## 阶段 1：Core Runtime（已完成）
 
@@ -53,18 +53,20 @@
 
 验收：共 89 项 Core/Scenario 测试及正反类型用例通过，浏览器 16 项检查通过，实际安装两个 tarball 后的 Mock、Fixture、Trace、生产默认禁用及导出类型检查通过。Node 22、24 均已验证。业务对象保持引用语义，可变状态隔离需使用 Factory，不进行深拷贝或内置 State 管理。详见 [Scenario](scenario.md)。
 
-## 阶段 4：DevTools（待实施）
+## 阶段 4：DevTools（已完成）
 
-下一步新增独立调试包，采用浏览器内直接连接 Runtime/Runner 的方式，先实现本地开发面板：
+独立包 `@action-flow/devtools`，原生 DOM/Shadow DOM，浏览器内直接连接 Runtime/Runner：
 
 - Action 列表、搜索和 Payload 编辑。
 - 单次执行、Scenario 选择与结果检查。
 - 可展开的 Trace 调用树，显示状态、耗时和异常关联。
 - 独立开发入口与正常业务构建的隔离。
+- 独立且有容量上限的运行历史、并发执行、所选任务取消、截断提示和安全文本展示。
+- 无 DOM 控制层、Scenario 归属校验、按次运行的实时 Trace，以及卸载时取消并等待资源释放。
 
-优先完成可交互的端到端流程：选 Action → 编辑 JSON Payload → 执行或选择 Scenario → 检查结果与调用树，再补充取消、错误输入和并发执行的交互验收。调试入口只在开发环境显式挂载，不加入 Core 的浏览器依赖。
+已完成端到端流程：选 Action → 编辑 JSON Payload → 执行或选择 Scenario → 检查结果与调用树。调试入口显式挂载，生产默认禁止，Core/Scenario 不引入 UI 依赖。
 
-完成标准：开发者无需重复页面前置操作即可调试指定 Action，并查看其 Scenario 和执行链路。UI 框架、连接方式在实施时确定。当前浏览器兼容性页不算作 DevTools。
+验收：Node 22、24 构建、类型检查、108 项测试和三个 tarball 外部消费检查通过。浏览器 DevTools 17 项交互检查通过，并手动验证成功、非法 JSON、冲突和取消。`pnpm example:devtools` 提供真实调试工作台；原有兼容性页继续独立保留。详见 [DevTools](devtools.md)。
 
 ## 阶段 5：工程化与发布（部分完成，贯穿各阶段）
 
@@ -73,19 +75,22 @@
 - ESM 构建、Export Map、类型声明、零运行时依赖检查。
 - Node.js 22.23.1、24.18.0 的本地测试及实际 tarball 外部消费项目检查。
 - 不依赖浏览器全局对象的包导入与模拟独立 SSR 请求测试；尚未声称已验证具体 SSR 框架。
-- 浏览器直接导入两个包 ESM 的验收页，16 项 Core/Scenario 检查已通过。Contract 是编译期能力，由类型用例与打包消费项目验证。
+- 浏览器直接导入三个包 ESM，16 项 Core/Scenario 和 17 项 DevTools 交互检查通过。Contract 是编译期能力，由类型用例与打包消费项目验证。
 - 可重复的微基准 `pnpm bench`，覆盖普通函数、关闭追踪的 Dispatch、开启结构追踪的 Dispatch，并检查保留数量。不据此推断真实应用性能。
 - CI 矩阵、手动打包与上传构建产物工作流，以及 `pnpm release:pack`。尚未运行远端工作流或发布 npm。
 
-剩余：随 DevTools 增加对应的兼容性、性能与打包测试；完成真实调试 UI 的浏览器交互验收，确认版本策略、发布目标和发布流程。当前两个包仍为 0.0.0。
+剩余：确认初始版本策略、发布目标、包元数据和发布流程，核验远端 CI，并完善发布说明/接入文档。当前三个包仍为未发布的 0.0.0。浏览器交互页已本地验证，尚未接入 CI 的自动浏览器任务；尚未声称验证具体 SSR 框架、远程连接或生产诊断。
+
+下一轮先做发布准备：检查三包公共导出与文档、版本/Changesets 和依赖关系、实际 tarball 体积与内容、发布工作流的手动触发边界。npm 发布目标与初始版本确定后再执行实际发布。
 
 ## 本轮检查
 
-- `pnpm check`：两个包构建、类型检查、89 项运行时测试。
+- `pnpm check`：三个包构建、类型检查、108 项运行时测试。
 - `pnpm example`：类型安全的跨模块返回值使用、登录成功与嵌套错误传播。
 - `pnpm example:trace`：并发、错误与取消调用树以及生命周期事件。
 - `pnpm example:scenario`：同一 Action 的三个分支、Fixture 释放以及普通 Dispatch 不受 Mock 影响。
-- `pnpm check:package`：实际安装 Core 和 Scenario tarball，验证运行时与公开类型、Mock 隔离、Fixture、Trace 标签、生产默认禁用、README/许可证及包依赖。
-- `pnpm release:pack`：两个可安装产物输出至 artifacts/，不发布 npm。
+- `pnpm check:package`：实际安装三个 tarball，验证运行时、无 DOM 导入、公开类型、Mock 隔离、Fixture、实时 Trace、生产默认禁用、README/许可证及包依赖。
+- `pnpm release:pack`：三个可安装产物输出至 artifacts/，不发布 npm。
+- `pnpm example:devtools`：真实 UI 工作台，另有 17 项可重复的浏览器交互检查。
 
-以上检查证明 Core、Execution & Trace 和 Scenario；DevTools 和最终发布仍未计入完成状态，尚未检查远端 CI 运行结果。
+以上检查证明 Milestone 1–4 的功能闭环；最终发布尚未完成，尚未检查远端 CI 运行结果。

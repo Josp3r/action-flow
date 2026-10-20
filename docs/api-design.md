@@ -90,3 +90,9 @@ Contract 不增加运行时注册表、字段或输入验证器。它不能验�
 独立包 `@action-flow/scenario` 提供 `createScenarioRunner(runtime)`、`runner.defineScenario(definition)`、`runner.run(definition, { signal? })`、`runner.get(id)` 和 `runner.list()`。输入和 Mock 输出关联于注册的 Action；结果含状态、结果/原始错误、Scenario/Run/根执行 ID、本地 Trace 和清理错误。生命周期见 [Scenario](scenario.md)。
 
 Core 的 `runtime.providers` 暴露冻结的基础绑定，`runtime.debugEnabled` 表示最终调试策略。`runtime.createDebugScope(options)` 创建独立 Providers、Middleware、Trace，`close()` 拒绝新根调用并等待已启动后代结束。关闭后执行拒绝为 `DebugScopeClosedError`；禁止调试时创建作用域抛出 `DebugDisabledError`。
+
+Runner 的 `runtime` 暴露归属，`run` 的 `onTrace` 回调观察本次调用的实时事件；观察者异常被隔离。Core 还公开 `snapshotTraceValue(value)`，供诊断消费者创建有限、冻结且脱敏的快照，不执行 getter/toJSON，保留 AggregateError 中的各个子错误。
+
+## DevTools
+
+独立包 `@action-flow/devtools` 导出 `mountDevTools({ target, runtime, runner?, initialPayloads?, maxRuns?, trace? })`，返回 `controller`、`refresh()` 和幂等 `unmount()`。也可用 `createDevToolsController` 构建自定义前端。接入、JSON 边界、取消、容量和释放语义见 [DevTools](devtools.md)。
