@@ -2,6 +2,10 @@
 
 Framework-agnostic, dispatch-driven action runtime for TypeScript.
 
+```sh
+npm install @action-flow/core
+```
+
 ```ts
 import { createRuntime, defineAction, defineModule } from "@action-flow/core";
 

@@ -2,6 +2,10 @@
 
 An explicitly mounted browser panel for ActionFlow. Lists and searches registered Actions, edits JSON inputs, runs Actions or Scenarios, and displays results, history and live nested traces with cancellation.
 
+```sh
+npm install --save-dev @action-flow/devtools
+```
+
 ```ts
 import { mountDevTools } from "@action-flow/devtools";
 
@@ -24,4 +28,4 @@ Results/errors are detached bounded snapshots using Core's `snapshotTraceValue`:
 
 For a custom frontend, `createDevToolsController({ runtime, runner?, maxRuns?, trace? })` exposes `actions`, `scenarios()`, `runs()`, `subscribe()`, `runAction(id, jsonText?)`, `runScenario(id)`, `cancel(id)`, `clear()` and `dispose()`. Its dynamic Action IDs are checked against the Registry before execution. Subscribe receives changes to immutable snapshots; observer errors cannot affect work. Dispose stops observation and requests cooperative cancellation, then waits for all started work. Uncooperative tasks can delay disposal.
 
-ESM only. Runtime dependencies: Core and Scenario, with no UI framework. This is an unpublished 0.0.0 development package.
+ESM only. Runtime dependencies: Core and Scenario, with no UI framework. See the changelog for 0.x API changes.

@@ -17,6 +17,7 @@
     "bench": "pnpm build && node scripts/benchmark.mjs",
     "check:package": "pnpm build && node scripts/check-package.mjs",
     "release:pack": "pnpm build && pnpm --filter '@action-flow/core' --filter '@action-flow/scenario' --filter '@action-flow/devtools' pack --pack-destination artifacts",
+    "release:version": "changeset version",
     "check": "pnpm build && pnpm typecheck && pnpm test",
     "changeset": "changeset"
   },

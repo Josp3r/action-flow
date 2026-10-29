@@ -2,6 +2,10 @@
 
 Typed debug scenarios for `@action-flow/core`. Requires a Runtime created with `environment: "development"`, `environment: "test"` or an explicit `allowDebug: true`.
 
+```sh
+npm install @action-flow/core @action-flow/scenario
+```
+
 ```ts
 import { createRuntime, defineAction, defineModule } from "@action-flow/core";
 import { createScenarioRunner } from "@action-flow/scenario";
@@ -26,4 +30,4 @@ The runner drains all started descendants before cleanup, then calls definition 
 
 Results include `status`, `scenarioId`, `runId`, optional root IDs, a bounded local `trace`, `droppedRecords` and `cleanupErrors`. Failures preserve the thrown value. Cleanup failures return an `AggregateError` containing the primary failure (if any) followed by cleanup errors, and set status to `error`. Invalid/foreign definitions and disabled debug execution reject before lifecycle callbacks. The local trace defaults to 1,000 records and no payload capture, independently of Runtime retention and capture settings; configure `createScenarioRunner(runtime, { trace: ... })` when needed.
 
-ESM only. The sole runtime dependency is `@action-flow/core`. This package does not manage application state. Production debug opt-in is an execution policy, not authentication or a security boundary for an exposed remote endpoint. Version 0.0.0 is an unpublished development build.
+ESM only. The sole runtime dependency is `@action-flow/core`. This package does not manage application state. Production debug opt-in is an execution policy, not authentication or a security boundary for an exposed remote endpoint. See the changelog for 0.x API changes.
