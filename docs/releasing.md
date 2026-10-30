@@ -45,3 +45,9 @@ pnpm pack 会把 `workspace:*` 改写为真实版本；不要使用未经检查�
 查询三个包的版本、latest 标签、依赖和 tarball integrity，与本地文件对照。在仓库外的新目录从 `https://registry.npmjs.org/` 安装全部三个 `@0.1.0` 包，执行 Core 嵌套调用、Scenario Mock/Fixture 和 DevTools 控制层，并确认安装来源是 npm 而非 workspace 链接。然后记录结果，创建并推送 `v0.1.0` Git 标签。
 
 如果部分包已经成功发布，先查询 Registry 状态，再继续剩余包。不要盲目重发、修改已发布版本的内容、自动撤回已发布包，或为了重试就提升所有版本。若认证过期或需要 2FA，保留产物，完成认证后继续尚未发布的包。
+
+## 0.1.0 首发记录（2026-10-30）
+
+[Core](https://www.npmjs.com/package/@action-flow/core)、[Scenario](https://www.npmjs.com/package/@action-flow/scenario)、[DevTools](https://www.npmjs.com/package/@action-flow/devtools) 均已公开发布，`latest` 指向 `0.1.0`。三包 Registry integrity 与验收的本地 tarball 一致，Scenario/DevTools 的依赖均为对应包的精确 `0.1.0` 版本。
+
+在临时外部项目从公共 npm 安装后，Core 嵌套调用、Trace/取消、Scenario Mock 隔离与 Fixture 释放、DevTools 无 DOM 导入和控制层、生产环境默认禁用调试、导出类型及负向类型用例均通过。首次发布期间曾短暂出现 `0.0.0-stage` 占位版本；CLI 与网页均无待批准版本，等待 Registry 同步后完成正式版本验证。不要仅凭发布命令成功就判定版本已可安装。

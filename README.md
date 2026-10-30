@@ -2,7 +2,17 @@
 
 框架无关、以 Dispatch 为核心的 TypeScript Action Runtime。统一管理业务行为，通过依赖注入独立执行，并用 Trace 和 Scenario 复现业务分支。
 
-目前已完成 **Core Runtime、Execution & Trace、Scenario 和 DevTools**：可从浏览器选择 Action、编辑输入、运行场景，并查看结果和实时调用树。MVP 的功能闭环已完成，下一阶段为版本与发布收尾。三个包尚未发布。
+目前已完成 **Core Runtime、Execution & Trace、Scenario 和 DevTools**：可从浏览器选择 Action、编辑输入、运行场景，并查看结果和实时调用树。MVP 功能闭环及 `0.1.0` 首发已完成，三个包均已发布到公共 npm。
+
+## 安装
+
+```sh
+npm install @action-flow/core@0.1.0
+# 按需安装场景运行器与浏览器调试面板
+npm install @action-flow/scenario@0.1.0 @action-flow/devtools@0.1.0
+```
+
+发布与后续版本流程见 [发布说明](docs/releasing.md)。
 
 ## 开发
 

@@ -1,8 +1,8 @@
 # 实施进度与后续计划
 
-## 当前结论（2026-10-20）
+## 当前结论（2026-10-30）
 
-**Milestone 1–4：Core Runtime、Execution & Trace、Scenario、DevTools 已完成。MVP 功能闭环已验收；版本与发布收尾仍待完成。** 本轮新增独立 DevTools 包、浏览器调试工作台及可重复的交互验收。
+**Milestone 1–4：Core Runtime、Execution & Trace、Scenario、DevTools 已完成。MVP 功能闭环已验收，三个包的公共 npm `0.1.0` 首发已完成。** 已从 Registry 实际安装并验证运行时、导出类型及三包协作。
 
 按 [项目成功标准](project-background.md#15-项目成功标准) 对照：
 
@@ -77,11 +77,13 @@
 - 不依赖浏览器全局对象的包导入与模拟独立 SSR 请求测试；尚未声称已验证具体 SSR 框架。
 - 浏览器直接导入三个包 ESM，16 项 Core/Scenario 和 17 项 DevTools 交互检查通过。Contract 是编译期能力，由类型用例与打包消费项目验证。
 - 可重复的微基准 `pnpm bench`，覆盖普通函数、关闭追踪的 Dispatch、开启结构追踪的 Dispatch，并检查保留数量。不据此推断真实应用性能。
-- CI 矩阵、手动打包与上传构建产物工作流，以及 `pnpm release:pack`。尚未运行远端工作流或发布 npm。
+- CI 矩阵、手动打包与上传构建产物工作流，以及 `pnpm release:pack`。远端工作流运行结果仍待核验；公共 npm 首发已完成。
 
-剩余：确认初始版本策略、发布目标、包元数据和发布流程，核验远端 CI，并完善发布说明/接入文档。当前三个包仍为未发布的 0.0.0。浏览器交互页已本地验证，尚未接入 CI 的自动浏览器任务；尚未声称验证具体 SSR 框架、远程连接或生产诊断。
+已完成三个包的 `0.1.0` 版本、包元数据、Changesets 更新记录和手动发布说明，并核对公共 Registry 的 latest 标签、依赖与 tarball integrity。仓库外从 npm 实际安装后三包运行与正反类型检查通过。
 
-下一轮先做发布准备：检查三包公共导出与文档、版本/Changesets 和依赖关系、实际 tarball 体积与内容、发布工作流的手动触发边界。npm 发布目标与初始版本确定后再执行实际发布。
+剩余：核验远端 CI，并持续完善接入文档和真实项目反馈。浏览器交互页已本地验证，尚未接入 CI 的自动浏览器任务；尚未声称验证具体 SSR 框架、远程连接或生产诊断。
+
+后续版本使用 Changesets 记录变更，按 [发布说明](releasing.md) 验证 tarball、发布并检查 Registry 消费结果。
 
 ## 本轮检查
 
@@ -93,4 +95,4 @@
 - `pnpm release:pack`：三个可安装产物输出至 artifacts/，不发布 npm。
 - `pnpm example:devtools`：真实 UI 工作台，另有 17 项可重复的浏览器交互检查。
 
-以上检查证明 Milestone 1–4 的功能闭环；最终发布尚未完成，尚未检查远端 CI 运行结果。
+以上检查证明 Milestone 1–4 的功能闭环；三个包已完成公共 npm `0.1.0` 首发及 Registry 实际安装验收，远端 CI 运行结果仍待核验。
